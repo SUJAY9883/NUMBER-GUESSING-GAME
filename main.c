@@ -6,7 +6,7 @@
 // --- CSS FOR STYLING (GTK4 SAFE) ---
 const char *css_data =
     "window { background-color: #f0f2f5; }"
-    ".card { background-color: white; border-radius: 15px; padding: 20px; "
+    ".card { background-color: white; border-radius: 15px; padding: 20px;"
     "margin: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }"
     ".header-title { font-size: 25px; font-weight: bold; color: #3b5998; margin-bottom: 10px; }"
     ".name-question { font-size: 18px; font-weight: 500; color: #444; margin-bottom: 15px; }"
@@ -19,7 +19,9 @@ const char *css_data =
     ".feedback-box { background-color: #fee2e2; color: #991b1b; border-radius: 8px; padding: 10px; margin-top: 15px; font-weight: bold; }"
     ".success-text { font-size: 20px; font-weight: bold; color: #1e293b; }"
     ".big-number { font-size: 25px; font-weight: 900; color: #22c55e; margin: 10px; }"
-    ".tip-text { color: #666; font-size: 15px; margin-top: 20px; }";
+    ".tip-text { color: #666; font-size: 15px; margin-top: 20px; }"
+    ".warning-text { color: #ff3333; font-weight: 700; font-size: 15px; margin-top: 5px; }"
+    ".attempts-text { color: #0f3edd; font-size: 20px; font-weight: 700; }";
 
 // --- GAME STRUCT ---
 typedef struct
@@ -28,6 +30,7 @@ typedef struct
     GtkWidget *window;
 
     GtkWidget *name_entry;
+    GtkWidget *name_warning_label;   // << NEW warning label
 
     GtkWidget *greeting_label;
     GtkWidget *guess_spin;
@@ -45,34 +48,6 @@ typedef struct
     char player_name[100];
 
 } GameApp;
-
-// --- CUSTOM NON-DEPRECATED GTK4 DIALOG ---
-static void show_error_dialog(GtkWindow *parent, const char *message)
-{
-    GtkWidget *dialog = gtk_window_new();
-    gtk_window_set_title(GTK_WINDOW(dialog), "Oops!");
-    gtk_window_set_modal(GTK_WINDOW(dialog), TRUE);
-    gtk_window_set_transient_for(GTK_WINDOW(dialog), parent);
-    gtk_window_set_default_size(GTK_WINDOW(dialog), 300, 120);
-
-    GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
-    gtk_widget_set_margin_top(box, 15);
-    gtk_widget_set_margin_bottom(box, 15);
-    gtk_widget_set_margin_start(box, 15);
-    gtk_widget_set_margin_end(box, 15);
-
-    GtkWidget *label = gtk_label_new(message);
-    GtkWidget *ok_button = gtk_button_new_with_label("OK");
-
-    g_signal_connect(ok_button, "clicked",
-                     G_CALLBACK(gtk_window_destroy), dialog);
-
-    gtk_box_append(GTK_BOX(box), label);
-    gtk_box_append(GTK_BOX(box), ok_button);
-
-    gtk_window_set_child(GTK_WINDOW(dialog), box);
-    gtk_window_present(GTK_WINDOW(dialog));
-}
 
 // --- LOGIC FUNCTIONS ---
 static void start_game_logic(GameApp *app)
@@ -101,12 +76,15 @@ static void on_start_clicked(GtkButton *btn, GameApp *app)
 
     if (strlen(name) == 0)
     {
-        show_error_dialog(GTK_WINDOW(app->window),
-                          "Whoops! I need a name to cheer for.\nPlease enter one!");
+        gtk_label_set_text(GTK_LABEL(app->name_warning_label),
+                           "Whoops! I need a name to cheer for. Please enter one!");
+        gtk_widget_set_visible(app->name_warning_label, TRUE);
         return;
     }
 
+    gtk_widget_set_visible(app->name_warning_label, FALSE);
     strncpy(app->player_name, name, 99);
+
     start_game_logic(app);
 }
 
@@ -142,39 +120,26 @@ static void on_submit_guess(GtkButton *btn, GameApp *app)
     }
     else
     {
-        char congrats[200];
-        char numbuf[64];
-        char attempts_final[64];
+        char congrats[200], numbuf[64], attempts_final[64];
 
-        snprintf(congrats, sizeof(congrats),
-                 "Bullseye, %s!", app->player_name);
-
-        snprintf(numbuf, sizeof(numbuf),
-                 "The secret number was %d!", app->secret_number);
-
-        snprintf(attempts_final, sizeof(attempts_final),
-                 "You cracked it in %d guesses!", app->attempts);
+        snprintf(congrats, sizeof(congrats), "Bullseye, %s!", app->player_name);
+        snprintf(numbuf, sizeof(numbuf), "The secret number was %d!", app->secret_number);
+        snprintf(attempts_final, sizeof(attempts_final), "You cracked it in %d guesses!", app->attempts);
 
         gtk_label_set_text(GTK_LABEL(app->congrats_label), congrats);
         gtk_label_set_text(GTK_LABEL(app->secret_number_label), numbuf);
         gtk_label_set_text(GTK_LABEL(app->total_attempts_label), attempts_final);
 
-        // PERFORMANCE RANKING
         if (app->attempts == 1)
-            gtk_label_set_text(GTK_LABEL(app->praise_label),
-                               "IMPOSSIBLE!!! Are you psychic?!");
+            gtk_label_set_text(GTK_LABEL(app->praise_label), "IMPOSSIBLE!!! Are you psychic?!");
         else if (app->attempts <= 4)
-            gtk_label_set_text(GTK_LABEL(app->praise_label),
-                               "Mastermind! Absolute brilliance!");
+            gtk_label_set_text(GTK_LABEL(app->praise_label), "Mastermind! Absolute brilliance!");
         else if (app->attempts <= 7)
-            gtk_label_set_text(GTK_LABEL(app->praise_label),
-                               "Amazing job! You're sharp!");
+            gtk_label_set_text(GTK_LABEL(app->praise_label), "Amazing job! You're sharp!");
         else if (app->attempts <= 10)
-            gtk_label_set_text(GTK_LABEL(app->praise_label),
-                               "Well done! You kept going strong!");
+            gtk_label_set_text(GTK_LABEL(app->praise_label), "Well done! You kept going strong!");
         else
-            gtk_label_set_text(GTK_LABEL(app->praise_label),
-                               "Phew! You got it just in time!");
+            gtk_label_set_text(GTK_LABEL(app->praise_label), "Phew! You got it just in time!");
 
         gtk_stack_set_visible_child_name(GTK_STACK(app->stack), "page_result");
     }
@@ -221,6 +186,11 @@ GtkWidget *create_welcome_page(GameApp *app)
                                    "Enter your legendary name...");
     gtk_widget_add_css_class(app->name_entry, "input-field");
 
+    // NEW WARNING LABEL BELOW THE BUTTON
+    app->name_warning_label = gtk_label_new("");
+    gtk_widget_add_css_class(app->name_warning_label, "warning-text");
+    gtk_widget_set_visible(app->name_warning_label, FALSE);
+
     GtkWidget *start_btn = gtk_button_new_with_label("START");
     gtk_widget_add_css_class(start_btn, "btn-green");
     g_signal_connect(start_btn, "clicked", G_CALLBACK(on_start_clicked), app);
@@ -234,6 +204,7 @@ GtkWidget *create_welcome_page(GameApp *app)
     gtk_box_append(GTK_BOX(box), instruction);
     gtk_box_append(GTK_BOX(box), app->name_entry);
     gtk_box_append(GTK_BOX(box), start_btn);
+    gtk_box_append(GTK_BOX(box), app->name_warning_label); // << added
     gtk_box_append(GTK_BOX(box), tip);
 
     return box;
@@ -250,7 +221,7 @@ GtkWidget *create_game_page(GameApp *app)
     gtk_widget_add_css_class(app->greeting_label, "success-text");
 
     GtkWidget *instruct = gtk_label_new(
-        "What's your first guess?\nTake your best shot?");
+        "What's your first guess?\nTake your best shot!");
     gtk_widget_add_css_class(instruct, "guess-cheer-text");
 
     app->guess_spin = gtk_spin_button_new_with_range(0, 150, 1);
@@ -262,6 +233,7 @@ GtkWidget *create_game_page(GameApp *app)
     g_signal_connect(submit_btn, "clicked", G_CALLBACK(on_submit_guess), app);
 
     app->attempts_label = gtk_label_new("Attempts: 0");
+    gtk_widget_add_css_class(app->attempts_label, "attempts-text"); // << NEW CLASS
 
     app->feedback_revealer = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     app->feedback_label = gtk_label_new("");
