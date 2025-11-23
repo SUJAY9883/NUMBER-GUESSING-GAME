@@ -1,115 +1,307 @@
-#include <stdio.h>
+#include <gtk/gtk.h>
 #include <stdlib.h>
 #include <time.h>
 #include <string.h>
 
-void play_game(char name[]) {
-    // Some fonts to make the game look professional
-    printf("\nHEY %s", name);
-    printf("\nWELCOME TO THE NUMBER GUESSING GAME!\n");
-    printf("A GAME OF LOGIC AND INTUITION!\n\n");
-    printf("---GAME INSTRUCTIONS---\n");
-    printf("I HAVE PICKED A RANDOM NUMBER BETWEEN 1 AND 100.\n");
-    printf("TRY TO GUESS IT IN AS FEW ATTEMPTS AS POSSIBLE.\n");
-    printf("I WILL TELL YOU IF THE NUMBER IS HIGHER OR LOWER.\n\n");
+// --- CSS FOR STYLING (GTK4 SAFE) ---
+const char *css_data =
+    "window { background-color: #f0f2f5; }"
+    ".card { background-color: white; border-radius: 15px; padding: 30px; "
+    "margin: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }"
+    ".header-title { font-size: 16px; font-weight: bold; color: #3b5998; margin-bottom: 10px; }"
+    ".welcome-text { font-size: 24px; font-weight: 800; color: #333; margin-bottom: 20px; }"
+    ".input-field { font-size: 18px; padding: 10px; margin-bottom: 20px; border-radius: 8px; }"
+    ".btn-green { background-color: #4caf50; color: white; font-weight: bold; padding: 10px; border-radius: 8px; }"
+    ".btn-blue { background-color: #3b82f6; color: white; font-weight: bold; padding: 10px; border-radius: 8px; }"
+    ".btn-red { background-color: #ef4444; color: white; font-weight: bold; padding: 10px; border-radius: 8px; }"
+    ".feedback-box { background-color: #fee2e2; color: #991b1b; border-radius: 8px; padding: 10px; margin-top: 15px; font-weight: bold; }"
+    ".success-text { font-size: 18px; font-weight: bold; color: #1e293b; }"
+    ".big-number { font-size: 60px; font-weight: 900; color: #22c55e; margin: 10px; }"
+    ".tip-text { color: #666; font-size: 12px; margin-top: 20px; }";
 
-    // Generate a random number by computer
+// --- GAME STRUCT ---
+typedef struct {
+    GtkWidget *stack;
+    GtkWidget *window;
+
+    GtkWidget *name_entry;
+
+    GtkWidget *greeting_label;
+    GtkWidget *guess_spin;
+    GtkWidget *feedback_label;
+    GtkWidget *feedback_revealer;
+    GtkWidget *attempts_label;
+
+    GtkWidget *congrats_label;
+    GtkWidget *secret_number_label;
+    GtkWidget *total_attempts_label;
+    GtkWidget *praise_label;
+
+    int secret_number;
+    int attempts;
+    char player_name[100];
+
+} GameApp;
+
+
+// --- LOGIC FUNCTIONS ---
+static void start_game_logic(GameApp *app) {
     srand(time(0));
-    int secret_number = (rand() % 100) + 1;
-    int user_guess = 0;
-    int attempts = 0;
+    app->secret_number = (rand() % 100) + 1;
+    app->attempts = 0;
 
-    // Loop for condition check
-    while (1) {
-        attempts++;
-        printf("ATTEMPT %d: ENTER YOUR GUESS: ", attempts);
+    gtk_spin_button_set_value(GTK_SPIN_BUTTON(app->guess_spin), 0);
+    gtk_label_set_text(GTK_LABEL(app->feedback_label), "");
+    gtk_widget_set_visible(app->feedback_revealer, FALSE);
+    gtk_label_set_text(GTK_LABEL(app->attempts_label), "Attempts: 0");
 
-        // Input validation
-        if (scanf("%d", &user_guess) != 1) {
-            printf("\nINVALID INPUT! PLEASE ENTER A NUMBER.\n\n");
-            // Clear input buffer
-            while (getchar() != '\n');
-            continue;
-        }
+    char greet[150];
+    snprintf(greet, sizeof(greet), "Hello, %s!", app->player_name);
+    gtk_label_set_text(GTK_LABEL(app->greeting_label), greet);
 
-        if (user_guess < 1 || user_guess > 100) {
-            printf("\nPLEASE CHOOSE A NUMBER BETWEEN 1 AND 100!\n\n");
-        } 
-        else if (user_guess > secret_number) {
-            printf("TOO HIGH! TRY A LOWER NUMBER.\n\n");
-        } 
-        else if (user_guess < secret_number) {
-            printf("TOO LOW! TRY A HIGHER NUMBER.\n\n");
-        } 
-        else {
-            // Correct guess
-            printf("\nCONGRATULATION!\n");
-            printf("YOU GUESSED THE CORRECT NUMBER: %d\n", secret_number);
-            printf("IT TOOK YOU %d ATTEMPTS TO WIN.\n", attempts);
-            
-            // Give specific praise based on attempts
-            if (attempts <= 5) {
-                printf("AMAZING! YOU ARE A GENIUS!\n");
-            } else if (attempts <= 10) {
-                printf("GOOD JOB! SOLID PERFORMANCE!\n");
-            } else {
-                printf("YOU DID IT, BUT YOU CAN DO BETTER!\n");
-            }
-            break; // Exit the loop
-        }
+    gtk_stack_set_visible_child_name(GTK_STACK(app->stack), "page_game");
+}
+
+static void on_start_clicked(GtkButton *btn, GameApp *app) {
+    const char *name = gtk_editable_get_text(GTK_EDITABLE(app->name_entry));
+
+    if (strlen(name) == 0)
+        return;
+
+    strncpy(app->player_name, name, 99);
+    start_game_logic(app);
+}
+
+static void on_submit_guess(GtkButton *btn, GameApp *app) {
+    int guess = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(app->guess_spin));
+
+    if (guess < 1 || guess > 100) {
+        gtk_label_set_text(GTK_LABEL(app->feedback_label),
+                           "Please choose between 1 and 100!");
+        gtk_widget_set_visible(app->feedback_revealer, TRUE);
+        return;
+    }
+
+    app->attempts++;
+
+    char attempts_text[50];
+    snprintf(attempts_text, sizeof(attempts_text), "Attempts: %d", app->attempts);
+    gtk_label_set_text(GTK_LABEL(app->attempts_label), attempts_text);
+
+    if (guess > app->secret_number) {
+        gtk_label_set_text(GTK_LABEL(app->feedback_label), "Try a LOWER number!");
+        gtk_widget_set_visible(app->feedback_revealer, TRUE);
+    }
+    else if (guess < app->secret_number) {
+        gtk_label_set_text(GTK_LABEL(app->feedback_label), "Try a HIGHER number!");
+        gtk_widget_set_visible(app->feedback_revealer, TRUE);
+    }
+    else {
+        char congrats[150];
+        char numbuf[10];
+        char attempts_final[50];
+
+        snprintf(congrats, sizeof(congrats),
+                 "CONGRATULATIONS, %s!", app->player_name);
+
+        snprintf(numbuf, sizeof(numbuf), "%d", app->secret_number);
+        snprintf(attempts_final, sizeof(attempts_final),
+                 "Total Attempts: %d", app->attempts);
+
+        gtk_label_set_text(GTK_LABEL(app->congrats_label), congrats);
+        gtk_label_set_text(GTK_LABEL(app->secret_number_label), numbuf);
+        gtk_label_set_text(GTK_LABEL(app->total_attempts_label), attempts_final);
+
+        if (app->attempts <= 5)
+            gtk_label_set_text(GTK_LABEL(app->praise_label),
+                               "AMAZING! YOU ARE A GENIUS!");
+        else if (app->attempts <= 10)
+            gtk_label_set_text(GTK_LABEL(app->praise_label),
+                               "GOOD JOB! SOLID PERFORMANCE!");
+        else
+            gtk_label_set_text(GTK_LABEL(app->praise_label),
+                               "YOU DID IT, BUT YOU CAN DO BETTER!");
+
+        gtk_stack_set_visible_child_name(GTK_STACK(app->stack), "page_result");
     }
 }
 
-int main() {
-    char name[30];
-    char play_again;
-    do {
-        // Take player name
-        printf("\nENTER YOUR NAME: ");
-        if (fgets(name, sizeof(name), stdin) != NULL) {
-            name[strcspn(name, "\n")] = 0;
-        }
+static void on_play_again_clicked(GtkButton *btn, GameApp *app) {
+    start_game_logic(app);
+}
 
-        // If name is empty
-        while (strlen(name) == 0) {
-            printf("NAME CANNOT BE EMPTY. ENTER YOUR NAME: ");
-            if (fgets(name, sizeof(name), stdin) != NULL) {
-                name[strcspn(name, "\n")] = 0;
-            }
-        }
+static void on_exit_clicked(GtkButton *btn, GameApp *app) {
+    g_application_quit(G_APPLICATION(gtk_window_get_application(GTK_WINDOW(app->window))));
+}
 
-        // Function calling to play the game
-        play_game(name);
 
-        // Play again
-        printf("\n\nDo you want to play again?\n");
-        printf("Enter \"Y\" for 'YES'\n");
-        printf("Enter \"N\" for 'NO'\n");
-        printf("Enter your choice: ");
+// --- UI HELPERS ---
+GtkWidget* create_card_box() {
+    GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 15);
+    gtk_widget_add_css_class(box, "card");
+    gtk_widget_set_halign(box, GTK_ALIGN_CENTER);
+    gtk_widget_set_valign(box, GTK_ALIGN_CENTER);
+    gtk_widget_set_size_request(box, 320, -1);
+    return box;
+}
 
-        // Clear buffer before reading char to avoid skipping input
-        // Note: Since play_game uses scanf, a newline is usually left in buffer.
-        int c;
-        while ((c = getchar()) != '\n' && c != EOF);
 
-        // Loop to continue or exit the game
-        while (1) {
-            // Take input from user
-            play_again = getchar();
+// --- PAGE BUILDERS ---
+GtkWidget* create_welcome_page(GameApp *app) {
+    GtkWidget *box = create_card_box();
 
-            // Clear buffer after reading the char
-            while ((c = getchar()) != '\n' && c != EOF);
+    GtkWidget *header = gtk_label_new("🎮 NUMBER GUESSING GAME");
+    gtk_widget_add_css_class(header, "header-title");
 
-            if (play_again == 'Y' || play_again == 'y' || play_again == 'N' || play_again == 'n') {
-                break;
-            } else {
-                printf("Invalid!! Please enter \"Y\" or \"N\": ");
-            }
-        }
+    GtkWidget *welcome = gtk_label_new("Welcome!");
+    gtk_widget_add_css_class(welcome, "welcome-text");
 
-    } while (play_again == 'Y' || play_again == 'y');
+    GtkWidget *instruction = gtk_label_new("Enter Your Name:");
 
-    printf("Thanks for playing %s! Goodbye!\n", name);
+    app->name_entry = gtk_entry_new();
+    gtk_entry_set_placeholder_text(GTK_ENTRY(app->name_entry), "Your Name");
+    gtk_widget_add_css_class(app->name_entry, "input-field");
 
-    return 0;
+    GtkWidget *start_btn = gtk_button_new_with_label("START");
+    gtk_widget_add_css_class(start_btn, "btn-green");
+    g_signal_connect(start_btn, "clicked", G_CALLBACK(on_start_clicked), app);
+
+    GtkWidget *tip = gtk_label_new("💡 Tip: Name required to continue");
+    gtk_widget_add_css_class(tip, "tip-text");
+
+    gtk_box_append(GTK_BOX(box), header);
+    gtk_box_append(GTK_BOX(box), welcome);
+    gtk_box_append(GTK_BOX(box), instruction);
+    gtk_box_append(GTK_BOX(box), app->name_entry);
+    gtk_box_append(GTK_BOX(box), start_btn);
+    gtk_box_append(GTK_BOX(box), tip);
+
+    return box;
+}
+
+GtkWidget* create_game_page(GameApp *app) {
+    GtkWidget *box = create_card_box();
+
+    GtkWidget *header = gtk_label_new("🎮 NUMBER GUESSING GAME");
+    gtk_widget_add_css_class(header, "header-title");
+
+    app->greeting_label = gtk_label_new("Hello, Player!");
+    gtk_widget_add_css_class(app->greeting_label, "success-text");
+
+    GtkWidget *instruct = gtk_label_new("Guess a number between 1 and 100:");
+    gtk_label_set_justify(GTK_LABEL(instruct), GTK_JUSTIFY_CENTER);
+
+    app->guess_spin = gtk_spin_button_new_with_range(0, 150, 1);
+    gtk_widget_add_css_class(app->guess_spin, "input-field");
+    gtk_widget_set_halign(app->guess_spin, GTK_ALIGN_CENTER);
+
+    GtkWidget *submit_btn = gtk_button_new_with_label("SUBMIT GUESS");
+    gtk_widget_add_css_class(submit_btn, "btn-blue");
+    g_signal_connect(submit_btn, "clicked", G_CALLBACK(on_submit_guess), app);
+
+    app->attempts_label = gtk_label_new("Attempts: 0");
+
+    app->feedback_revealer = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    app->feedback_label = gtk_label_new("");
+    gtk_widget_add_css_class(app->feedback_revealer, "feedback-box");
+    gtk_box_append(GTK_BOX(app->feedback_revealer), app->feedback_label);
+    gtk_widget_set_visible(app->feedback_revealer, FALSE);
+
+    gtk_box_append(GTK_BOX(box), header);
+    gtk_box_append(GTK_BOX(box), app->greeting_label);
+    gtk_box_append(GTK_BOX(box), instruct);
+    gtk_box_append(GTK_BOX(box), app->guess_spin);
+    gtk_box_append(GTK_BOX(box), submit_btn);
+    gtk_box_append(GTK_BOX(box), app->attempts_label);
+    gtk_box_append(GTK_BOX(box), app->feedback_revealer);
+
+    return box;
+}
+
+GtkWidget* create_result_page(GameApp *app) {
+    GtkWidget *box = create_card_box();
+
+    app->congrats_label = gtk_label_new("CONGRATULATIONS!");
+    gtk_widget_add_css_class(app->congrats_label, "header-title");
+
+    GtkWidget *txt1 = gtk_label_new("You guessed the number:");
+
+    app->secret_number_label = gtk_label_new("0");
+    gtk_widget_add_css_class(app->secret_number_label, "big-number");
+
+    app->total_attempts_label = gtk_label_new("Total Attempts: 0");
+    gtk_widget_add_css_class(app->total_attempts_label, "success-text");
+
+    app->praise_label = gtk_label_new("");
+
+    GtkWidget *btn_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
+
+    GtkWidget *play_btn = gtk_button_new_with_label("PLAY AGAIN");
+    gtk_widget_add_css_class(play_btn, "btn-blue");
+    g_signal_connect(play_btn, "clicked", G_CALLBACK(on_play_again_clicked), app);
+
+    GtkWidget *exit_btn = gtk_button_new_with_label("EXIT GAME");
+    gtk_widget_add_css_class(exit_btn, "btn-red");
+    g_signal_connect(exit_btn, "clicked", G_CALLBACK(on_exit_clicked), app);
+
+    gtk_box_append(GTK_BOX(btn_box), play_btn);
+    gtk_box_append(GTK_BOX(btn_box), exit_btn);
+
+    gtk_box_append(GTK_BOX(box), app->congrats_label);
+    gtk_box_append(GTK_BOX(box), txt1);
+    gtk_box_append(GTK_BOX(box), app->secret_number_label);
+    gtk_box_append(GTK_BOX(box), app->total_attempts_label);
+    gtk_box_append(GTK_BOX(box), app->praise_label);
+    gtk_box_append(GTK_BOX(box), btn_box);
+
+    return box;
+}
+
+
+// --- MAIN GTK APP ---
+static void activate(GtkApplication *app_system, gpointer user_data) {
+    GameApp *app = g_new0(GameApp, 1);
+
+    app->window = gtk_application_window_new(app_system);
+    gtk_window_set_title(GTK_WINDOW(app->window), "Guess The Number");
+    gtk_window_set_default_size(GTK_WINDOW(app->window), 400, 500);
+
+    // FIXED: GTK4 uses _load_from_string() (NOT deprecated)
+    GtkCssProvider *provider = gtk_css_provider_new();
+    gtk_css_provider_load_from_string(provider, css_data);
+
+    gtk_style_context_add_provider_for_display(
+        gdk_display_get_default(),
+        GTK_STYLE_PROVIDER(provider),
+        GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+
+    app->stack = gtk_stack_new();
+    gtk_stack_set_transition_type(GTK_STACK(app->stack),
+                                  GTK_STACK_TRANSITION_TYPE_SLIDE_LEFT_RIGHT);
+
+    GtkWidget *page1 = create_welcome_page(app);
+    GtkWidget *page2 = create_game_page(app);
+    GtkWidget *page3 = create_result_page(app);
+
+    gtk_stack_add_named(GTK_STACK(app->stack), page1, "page_welcome");
+    gtk_stack_add_named(GTK_STACK(app->stack), page2, "page_game");
+    gtk_stack_add_named(GTK_STACK(app->stack), page3, "page_result");
+
+    gtk_window_set_child(GTK_WINDOW(app->window), app->stack);
+    gtk_window_present(GTK_WINDOW(app->window));
+}
+
+int main(int argc, char **argv) {
+    GtkApplication *app;
+    int status;
+
+    app = gtk_application_new("com.example.numberguess",
+                              G_APPLICATION_DEFAULT_FLAGS);
+
+    g_signal_connect(app, "activate", G_CALLBACK(activate), NULL);
+
+    status = g_application_run(G_APPLICATION(app), argc, argv);
+    g_object_unref(app);
+
+    return status;
 }
