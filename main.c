@@ -13,9 +13,8 @@ const char *css_data =
     ".welcome-text { font-size: 28px; font-weight: 800; color: #333; margin-bottom: 20px; }"
     ".input-field { font-size: 18px; padding: 10px; margin-bottom: 20px; border-radius: 8px; }"
     ".guess-cheer-text { font-size: 18px; font-weight: 600; color: #444; }"
-    ".btn-green { background-color: #4caf50; color: white; font-weight: bold; padding: 10px; border-radius: 8px; }"
-    ".btn-blue { background-color: #3b82f6; color: white; font-weight: bold; padding: 10px; border-radius: 8px; }"
-    ".btn-red { background-color: #ef4444; color: white; font-weight: bold; padding: 10px; border-radius: 8px; }"
+    ".btn-blue { background-color: #1e40af; color: white; font-weight: bold; padding: 10px; border-radius: 8px; }!important"
+    ".btn-blue:hover { background-color: #3b82f6; }"
     ".feedback-box { background-color: #fee2e2; color: #991b1b; border-radius: 8px; padding: 10px; margin-top: 15px; font-weight: bold; }"
     ".success-text { font-size: 20px; font-weight: bold; color: #1e293b; }"
     ".big-number { font-size: 25px; font-weight: 900; color: #22c55e; margin: 10px; }"
@@ -194,7 +193,7 @@ GtkWidget *create_welcome_page(GameApp *app)
     gtk_widget_set_visible(app->name_warning_label, FALSE);
 
     GtkWidget *start_btn = gtk_button_new_with_label("START");
-    gtk_widget_add_css_class(start_btn, "btn-green");
+    gtk_widget_add_css_class(start_btn, "btn-blue");
     g_signal_connect(start_btn, "clicked", G_CALLBACK(on_start_clicked), app);
 
     GtkWidget *tip = gtk_label_new(
@@ -276,13 +275,12 @@ GtkWidget *create_result_page(GameApp *app)
     GtkWidget *btn_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
     gtk_widget_set_halign(btn_box, GTK_ALIGN_CENTER);
 
-
     GtkWidget *play_btn = gtk_button_new_with_label("PLAY AGAIN");
     gtk_widget_add_css_class(play_btn, "btn-blue");
     g_signal_connect(play_btn, "clicked", G_CALLBACK(on_play_again_clicked), app);
 
     GtkWidget *exit_btn = gtk_button_new_with_label("EXIT GAME");
-    gtk_widget_add_css_class(exit_btn, "btn-red");
+    gtk_widget_add_css_class(exit_btn, "btn-blue");
     g_signal_connect(exit_btn, "clicked", G_CALLBACK(on_exit_clicked), app);
 
     gtk_box_append(GTK_BOX(btn_box), play_btn);
