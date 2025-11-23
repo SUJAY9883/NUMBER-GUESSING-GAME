@@ -8,15 +8,16 @@ const char *css_data =
     "window { background-color: #f0f2f5; }"
     ".card { background-color: white; border-radius: 15px; padding: 20px; "
     "margin: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }"
-    ".header-title { font-size: 22px; font-weight: bold; color: #3b5998; margin-bottom: 10px; }"
+    ".header-title { font-size: 25px; font-weight: bold; color: #3b5998; margin-bottom: 10px; }"
     ".name-question { font-size: 18px; font-weight: 500; color: #444; margin-bottom: 15px; }"
     ".welcome-text { font-size: 28px; font-weight: 800; color: #333; margin-bottom: 20px; }"
     ".input-field { font-size: 18px; padding: 10px; margin-bottom: 20px; border-radius: 8px; }"
+    ".guess-cheer-text { font-size: 18px; font-weight: 600; color: #444; }"
     ".btn-green { background-color: #4caf50; color: white; font-weight: bold; padding: 10px; border-radius: 8px; }"
     ".btn-blue { background-color: #3b82f6; color: white; font-weight: bold; padding: 10px; border-radius: 8px; }"
     ".btn-red { background-color: #ef4444; color: white; font-weight: bold; padding: 10px; border-radius: 8px; }"
     ".feedback-box { background-color: #fee2e2; color: #991b1b; border-radius: 8px; padding: 10px; margin-top: 15px; font-weight: bold; }"
-    ".success-text { font-size: 18px; font-weight: bold; color: #1e293b; }"
+    ".success-text { font-size: 20px; font-weight: bold; color: #1e293b; }"
     ".big-number { font-size: 25px; font-weight: 900; color: #22c55e; margin: 10px; }"
     ".tip-text { color: #666; font-size: 15px; margin-top: 20px; }";
 
@@ -249,8 +250,8 @@ GtkWidget *create_game_page(GameApp *app)
     gtk_widget_add_css_class(app->greeting_label, "success-text");
 
     GtkWidget *instruct = gtk_label_new(
-        "What's your first guess?\nTake your best shot!");
-    gtk_label_set_justify(GTK_LABEL(instruct), GTK_JUSTIFY_CENTER);
+        "What's your first guess?\nTake your best shot?");
+    gtk_widget_add_css_class(instruct, "guess-cheer-text");
 
     app->guess_spin = gtk_spin_button_new_with_range(0, 150, 1);
     gtk_widget_add_css_class(app->guess_spin, "input-field");
