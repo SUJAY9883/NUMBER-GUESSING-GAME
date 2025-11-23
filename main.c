@@ -21,7 +21,9 @@ const char *css_data =
     ".big-number { font-size: 25px; font-weight: 900; color: #22c55e; margin: 10px; }"
     ".tip-text { color: #666; font-size: 15px; margin-top: 20px; }"
     ".warning-text { color: #ff3333; font-weight: 700; font-size: 15px; margin-top: 5px; }"
-    ".attempts-text { color: #0f3edd; font-size: 20px; font-weight: 700; }";
+    ".attempts-text { color: #0f3edd; font-size: 20px; font-weight: 700; }"
+    ".result-small-text { font-size: 20px; font-weight: 600; color: #444; }"
+    ".result-performance-text { font-size: 22px; font-weight: 700; color: rgba(9, 94, 223, 0.47); margin-top: 10px; }";
 
 // --- GAME STRUCT ---
 typedef struct
@@ -30,7 +32,7 @@ typedef struct
     GtkWidget *window;
 
     GtkWidget *name_entry;
-    GtkWidget *name_warning_label;   // << NEW warning label
+    GtkWidget *name_warning_label; // << NEW warning label
 
     GtkWidget *greeting_label;
     GtkWidget *guess_spin;
@@ -260,6 +262,7 @@ GtkWidget *create_result_page(GameApp *app)
     gtk_widget_add_css_class(app->congrats_label, "header-title");
 
     GtkWidget *txt1 = gtk_label_new("You guessed the number:");
+    gtk_widget_add_css_class(txt1, "result-small-text");
 
     app->secret_number_label = gtk_label_new("0");
     gtk_widget_add_css_class(app->secret_number_label, "big-number");
@@ -268,8 +271,11 @@ GtkWidget *create_result_page(GameApp *app)
     gtk_widget_add_css_class(app->total_attempts_label, "success-text");
 
     app->praise_label = gtk_label_new("");
+    gtk_widget_add_css_class(app->praise_label, "result-performance-text");
 
     GtkWidget *btn_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
+    gtk_widget_set_halign(btn_box, GTK_ALIGN_CENTER);
+
 
     GtkWidget *play_btn = gtk_button_new_with_label("PLAY AGAIN");
     gtk_widget_add_css_class(play_btn, "btn-blue");
