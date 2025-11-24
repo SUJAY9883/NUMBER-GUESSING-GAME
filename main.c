@@ -14,13 +14,15 @@
 
 const char *css_data =
     "window { background-color: #cbcbcb; }"
+    "button { all: unset; border-radius: 8px; padding: 10px; }"
     ".card { background-color: white; border-radius: 15px; padding: 20px; margin: 25px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }"
     ".header-title { font-size: 25px; font-weight: bold; color: #5208ff; margin-bottom: 10px; }"
     ".name-question { font-size: 18px; font-weight: 500; color: #444; margin-bottom: 15px; }"
     ".welcome-text { font-size: 26px; font-weight: 800; color: #279cf5; margin-bottom: 20px; }"
     ".input-field { font-size: 18px; padding: 10px; margin-bottom: 20px; border-radius: 8px; }"
     ".guess-cheer-text { font-size: 18px; font-weight: 600; color: #444; }"
-   
+    ".btn-blue { background-color: #1e40af; color: white; font-weight: bold; padding: 10px; border-radius: 8px; }"
+    ".btn-blue:hover { background-color: #3b82f6; }"
     ".feedback-box { background-color: #fee2e2; color: #991b1b; border-radius: 8px; padding: 10px; margin-top: 15px; font-weight: bold; }"
     ".success-text { font-size: 20px; font-weight: bold; color: #1e293b; }"
     ".big-number { font-size: 25px; font-weight: 900; color: #22c55e; margin: 10px; }"
