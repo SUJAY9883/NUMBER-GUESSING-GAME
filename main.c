@@ -220,6 +220,7 @@ GtkWidget *create_welcome_page(GameApp *app)
     app->name_entry = gtk_entry_new();
     gtk_entry_set_placeholder_text(GTK_ENTRY(app->name_entry), "Enter your legendary name...");
     gtk_widget_add_css_class(app->name_entry, "input-field");
+    g_signal_connect(app->name_entry, "activate", G_CALLBACK(on_start_clicked), app);
 
     // Warning Label (Hidden by default)
     app->name_warning_label = gtk_label_new("");
@@ -327,6 +328,7 @@ GtkWidget *create_result_page(GameApp *app)
     GtkWidget *play_btn = gtk_button_new_with_label("PLAY AGAIN");
     gtk_widget_add_css_class(play_btn, "btn-blue");
     g_signal_connect(play_btn, "clicked", G_CALLBACK(on_play_again_clicked), app);
+    g_signal_connect(play_btn, "activate", G_CALLBACK(on_play_again_clicked), app);
 
     GtkWidget *exit_btn = gtk_button_new_with_label("EXIT GAME");
     gtk_widget_add_css_class(exit_btn, "btn-blue");
